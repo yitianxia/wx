@@ -16,17 +16,19 @@
         echo  $echostr;
         exit;
     }else{
-
+        // 多轮
+        static $status = 0;
+        
         //1.获取到微信推送过来post数据（xml格式）
         $postArr = $GLOBALS['HTTP_RAW_POST_DATA'];
         //2.处理消息类型，并设置回复类型和内容
         /*<xml>
-<ToUserName><![CDATA[toUser]]></ToUserName>
-<FromUserName><![CDATA[FromUser]]></FromUserName>
-<CreateTime>123456789</CreateTime>
-<MsgType><![CDATA[event]]></MsgType>
-<Event><![CDATA[subscribe]]></Event>
-</xml>*/
+          <ToUserName><![CDATA[toUser]]></ToUserName>
+          <FromUserName><![CDATA[FromUser]]></FromUserName>
+          <CreateTime>123456789</CreateTime>
+          <MsgType><![CDATA[event]]></MsgType>
+          <Event><![CDATA[subscribe]]></Event>
+          </xml>*/
         $postObj = simplexml_load_string( $postArr );
         //$postObj->ToUserName = '';
         //$postObj->FromUserName = '';
@@ -51,7 +53,7 @@
                                 <MsgType><![CDATA[%s]]></MsgType>
                                 <Content><![CDATA[%s]]></Content>
                                 </xml>";
-                $info     = sprintf($template, $toUser, $fromUser, $time, $msgType, $content);
+                $info = sprintf($template, $toUser, $fromUser, $time, $msgType, $content);
                 echo $info;
                 /*<xml>
                 <ToUserName><![CDATA[toUser]]></ToUserName>
@@ -62,15 +64,16 @@
                 </xml>*/
             }
         }
-       else if( strtolower( $postObj->MsgType) == 'text'){
+        else if( strtolower( $postObj->MsgType) == 'text'){
             $content = $postObj -> Content;
-                if ($content != '北京天气') {
+            if ($content == '天气' && $status == 0) {
+                $status = 1;
                     //回复用户消息(纯文本格式)
                     $toUser   = $postObj->FromUserName;
                     $fromUser = $postObj->ToUserName;
                     $time     = time();
                     $msgType  =  'text';
-                    $content  = '您发送的内容是：'.$content;
+                    $content  = '请输入城市';
                     $template = "<xml>
                                     <ToUserName><![CDATA[%s]]></ToUserName>
                                     <FromUserName><![CDATA[%s]]></FromUserName>
@@ -81,7 +84,28 @@
                     $info = sprintf($template, $toUser, $fromUser, $time, $msgType, $content);
                     echo $info;
                 } else {
-                    $contentStr = "今日北京天气\n当前温度：1℃\n晴 -4℃~8℃\n重度污染 182|未来两小时无雨\n明天：晴 重度污染 -3℃~9℃";
+               // else if ($status == 1) {
+                    $status = 0;
+                    /*$con = new mysqli("localhost", "sql140_143_30_1", "rR5dfsZyr2", "sql140_143_30_1");
+                    $query = "SELECT weather_info from ins_county where county_name='$content'";  // 城市名加引号
+                    $result = $con -> query($query);
+                    $v = $result -> fetch_row();
+                    
+                    if ($v[0] != null) {
+                         $content = $v[0];
+                    } else {
+                         $content = "查询不到此城市";
+                    }*/
+                    $url_get = "http://140.143.30.100/index.php/api/weather/read/county_name/".$content;
+                    $response = file_get_contents($url_get);
+                    $data = json_decode($response, true);
+                    $code = $data['code'];
+                    if ($code == "200") {
+                        $weather_info = $data['data'][0]['weather_info'];
+                    } else {
+                        $weather_info = "请求失败"; 
+                    }
+
                     $toUser   = $postObj->FromUserName;
                     $fromUser = $postObj->ToUserName;
                     $time     = time();
@@ -93,17 +117,12 @@
                                     <MsgType><![CDATA[%s]]></MsgType>
                                     <Content><![CDATA[%s]]></Content>
                                     </xml>";
-                    $info = sprintf($template, $toUser, $fromUser, $time, $msgType, $contentStr);
+                    $info = sprintf($template, $toUser, $fromUser, $time, $msgType, $weather_info);
                     echo $info;
+                    //$result -> free();
+                    //$con -> close();
                 }
-               
-                /*<xml>
-                <ToUserName><![CDATA[toUser]]></ToUserName>
-                <FromUserName><![CDATA[fromUser]]></FromUserName>
-                <CreateTime>12345678</CreateTime>
-                <MsgType><![CDATA[text]]></MsgType>
-                <Content><![CDATA[你好]]></Content>
-                </xml>*/
+
         }
         
     }

@@ -17,9 +17,9 @@ return [
     // 数据库名
     'database'        => 'sql123_207_173_',
     // 用户名
-    'username'        => 'root',
+    'username'        => 'sql123_207_173_',
     // 密码
-    'password'        => 'jWZGeJaAfG',
+    'password'        => 'iGtifcehp3',
     // 端口
     'hostport'        => '3306',
     // 连接dsn
