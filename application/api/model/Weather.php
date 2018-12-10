@@ -4,14 +4,14 @@ namespace app\api\model;
 use think\Model;
 use think\Db;
 
-class News extends Model {
-    public function getNews($id = 1) {
-        $res = Db::name('news') -> where('id', $id) -> select();
+class Weather extends Model {
+    public function getNews($county_name='北京') {
+        $res = Db::name('ins_county') -> where('county_name', $county_name) -> select();
         return $res;
     }
   
     public function getNewsList() {
-        $res = Db::name('news') -> select();
+        $res = Db::name('ins_county') -> select();
         return $res;
     }
 }
